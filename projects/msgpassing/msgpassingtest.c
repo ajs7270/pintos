@@ -42,7 +42,7 @@ void run_message_passing_test(void)
 	thread_create("sender", PRI_DEFAULT, producer, &box);
 	thread_sleep(100);
 	thread_create("receiver", PRI_DEFAULT, consumer, &box);
-	thread_sleep(100);
+	thread_sleep(10000);
 }
 
 void msg_send(mail_box* destination, char* message){
@@ -87,15 +87,17 @@ void mail_box_init(mail_box* box){
 void producer(void* aux){
 	struct mail_box *box = (struct mail_box *)aux;
 	char data[20] ="hello world!!";
-	for(int i =0;i<10;i++){
+	for(int i =0;i<100;i++){
 		msg_send(box,data);
+		printf("%d",i);
 	}
 }
 
 void consumer(void *aux){
 	struct mail_box *box = (struct mail_box *)aux;
 	char data[20];
-	for(int i =0;i<10;i++){
+	for(int i =0;i<100;i++){
 		msg_receive(box,data);
+		printf("%d",i);
 	}
 }
