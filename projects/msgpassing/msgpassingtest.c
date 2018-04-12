@@ -31,8 +31,8 @@ void msg_send(mail_box* destination, char* message);
 void msg_receive(mail_box* source, char* message);
 void mail_box_init(mail_box* box);
 
-void producer(mail_box* box);
-void consumer(mail_box* box);
+void producer(void* aux);
+void consumer(void* aux);
 
 void run_message_passing_test(void)
 {
@@ -40,34 +40,38 @@ void run_message_passing_test(void)
 	mail_box_init(&box);
 	printf("m:%d n:%d s:%d \n",box.m.value,box.n.value,box.s.value);
 	thread_create("sender", PRI_DEFAULT, producer, &box);
+	thread_sleep(100);
 	thread_create("receiver", PRI_DEFAULT, consumer, &box);
+	thread_sleep(100);
 }
 
 void msg_send(mail_box* destination, char* message){
-	printf("1 %s m:%d n:%d s:%d \n",thread_current()->name,destination->m.value,destination->n.value,destination->s.value);
+	printf("1 %s m:%d n:%d s:%d \n",thread_name(),destination->m.value,destination->n.value,destination->s.value);
 	sema_down(&(destination->m));
-	printf("sema %s m:%d n:%d s:%d \n",thread_current()->name,destination->m.value,destination->n.value,destination->s.value);
 	printf("2 %s m:%d n:%d s:%d \n",thread_current()->name,destination->m.value,destination->n.value,destination->s.value);
 	sema_down(&(destination->s));
-	printf("3 %s",thread_current()->name);
+	printf("3 %s m:%d n:%d s:%d \n",thread_current()->name,destination->m.value,destination->n.value,destination->s.value);
 	strlcpy(destination->data, message,MAX_SIZE);
-	thread_sleep(100);
 	printf("mail box data : %s\n",destination->data);
-	sema_up(&(destination->n));
 	sema_up(&(destination->s));
+	printf("4 %s m:%d n:%d s:%d \n",thread_current()->name,destination->m.value,destination->n.value,destination->s.value);
+	sema_up(&(destination->n));
+	printf("5 %s m:%d n:%d s:%d \n",thread_current()->name,destination->m.value,destination->n.value,destination->s.value);
+
 }
 
 void msg_receive(mail_box* source, char* message){
-	printf("4 %s",thread_current()->name);
+	printf("6 %s m:%d n:%d s:%d \n",thread_current()->name,source->m.value,source->n.value,source->s.value);
 	sema_down(&(source->n));
-	printf("5 %s",thread_current()->name);
+	printf("7 %s m:%d n:%d s:%d \n",thread_current()->name,source->m.value,source->n.value,source->s.value);
 	sema_down(&(source->s));
-	printf("6 %s",thread_current()->name);
+	printf("8 %s m:%d n:%d s:%d \n",thread_current()->name,source->m.value,source->n.value,source->s.value);
 	strlcpy(message, source->data,MAX_SIZE);
-	//thread_sleep(100);
 	printf("receive data : %s\n",message);
-	sema_up(&(source->m));
 	sema_up(&(source->s));
+	printf("9 %s m:%d n:%d s:%d \n",thread_current()->name,source->m.value,source->n.value,source->s.value);
+	sema_up(&(source->m));
+	printf("10 %s m:%d n:%d s:%d \n",thread_current()->name,source->m.value,source->n.value,source->s.value);
 }
 
 void mail_box_init(mail_box* box){
@@ -80,16 +84,18 @@ void mail_box_init(mail_box* box){
 	printf("123456\n");
 }
 
-void producer(mail_box* box){
+void producer(void* aux){
+	struct mail_box *box = (struct mail_box *)aux;
 	char data[20] ="hello world!!";
-	while(true){
+	for(int i =0;i<10;i++){
 		msg_send(box,data);
 	}
 }
 
-void consumer(mail_box* box){
+void consumer(void *aux){
+	struct mail_box *box = (struct mail_box *)aux;
 	char data[20];
-	while(true){
+	for(int i =0;i<10;i++){
 		msg_receive(box,data);
 	}
 }
