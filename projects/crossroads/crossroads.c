@@ -14,13 +14,13 @@
 
 #define MAP_SIZE 7
 
-struct semaphore v;
+struct semaphore map_sema[MAP_SIZE][MAP_SIZE];
 
 typedef struct {
 	char name;
-	char src;
-	char dest;
-	struct position pos;
+	struct position path[10];
+	struct position cur_pos;
+	struct position next_pos;
 }vehicle;
 
 void vehicle_init(vehicle* car,char name, char src, char dest);
@@ -41,9 +41,36 @@ void run_crossroads(char **argv)
 }
 
 void vehicle_init(vehicle* car,char name, char src, char dest){
+	int srcNum,destNum;
+
 	car->name = name;
-	car->src = src;
-	car->dest = dest;
+
+	//initialize path
+	if(src = 'A'){
+		srcNum = 0;
+	}else if(src = 'B'){
+		srcNum = 1;
+	}else{
+		srcNum = 2;
+	}
+	if(destNum = 'A'){
+		destNum = 0;
+	}else if(destNum = 'B'){
+		destNum = 1;
+	}else{
+		destNum = 2;
+	}
+
+	for(int i = 0; i<10; i++){
+		car->path[i] = path[srcNum][destNum][i];
+	}
+
+	//initialize current pos
+	car->cur_pos.row = -1;
+	car->cur_pos.col = -1;
+	//initialize next pos
+	car->next_pos.row = car->path[0].row;
+	car->next_pos.col = car->path[0].col;
 }
 
 
@@ -62,31 +89,38 @@ void create_vehicle(char * arg, vehicle* cars){
 		char dest = *(token+2);
 
 		vehicle_init(&cars[i],name,src,dest);
-
 		thread_create("car", PRI_DEFAULT, move, &cars[i]);
 		i++;
 	}
 }
 
+//running car thread
 void move(void* aux){
 	vehicle *car = (vehicle*) aux;
 
+
 }
 
-void view(void* aux){printf("\033[2J");
+void view(void* aux){
+	char map_car_draw[MAP_SIZE][MAP_SIZE];
+	while(true){
 		for(int i =0;i<MAP_SIZE;i++){
 			for(int j =0;j<MAP_SIZE;j++){
-
+				map_car_draw[i][j] = map_draw_default[i][j];
 			}
 		}
+		/*
 
+		implement
+		car mapping map
 
-	while(true){
+		*/
 		printf("\033[2J");
 		for(int i =0;i<MAP_SIZE;i++){
 			for(int j =0;j<MAP_SIZE;j++){
-
+				printf("%c",map_car_draw[i][j])
 			}
+			printf("\n");
 		}
 	}
 }
