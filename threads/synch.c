@@ -341,6 +341,7 @@ void msg_send(mail_box* destination, char* message){
 	sema_down(&(destination->m));
 	sema_down(&(destination->s));
 	strlcpy(destination->data, message,MAX_SIZE);
+  thread_yield();
 	printf("mail box data (send) : %s\n",destination->data);
 	sema_up(&(destination->s));
 	sema_up(&(destination->n));
@@ -351,6 +352,7 @@ void msg_receive(mail_box* source, char* message){
 	sema_down(&(source->n));
 	sema_down(&(source->s));
 	strlcpy(message, source->data,MAX_SIZE);
+  thread_yeild();
   printf("receive data : %s\n",source->data);
 	sema_up(&(source->s));
 	sema_up(&(source->m));

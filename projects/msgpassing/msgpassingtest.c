@@ -21,15 +21,17 @@ void run_message_passing_test(void)
 void producer(void* aux){
 	struct mail_box *box = (struct mail_box *)aux;
 	char data[20] ="hello world!!";
-	for(int i =0;i<100;i++){
+	for(int i =0;i<10;i++){
 		msg_send(box,data);
 	}
+	printf("finish producer!\n");
 }
 
 void consumer(void *aux){
 	struct mail_box *box = (struct mail_box *)aux;
 	char data[20];
-	for(int i =0;i<100;i++){
+	for(int i =0;i<10;i++){
 		msg_receive(box,data);
 	}
+	printf("finish consumer!\n");
 }
