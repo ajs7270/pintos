@@ -302,16 +302,16 @@ bitmap_scan (const struct bitmap *b, size_t start, size_t cnt, bool value)
   static size_t latest = 0;
 
   if (cnt <= b->bit_cnt)
-  {
+    {
       size_t last = b->bit_cnt - cnt;
       size_t i;
-      if(pallocator == 0)          /* First fit */
+      if(pallocator == 0)
       {
         for (i = start; i <= last; i++)
           if (!bitmap_contains (b, i, cnt, !value))
             return i;
       }
-      else if(pallocator == 1)    /* Next fit */
+      else if(pallocator == 1)
       {
         for (i = latest; i <= last; i++)
           if (!bitmap_contains (b, i, cnt, !value))
@@ -319,6 +319,7 @@ bitmap_scan (const struct bitmap *b, size_t start, size_t cnt, bool value)
             latest = i;
             return i;
           }
+
         for (i = start; i <= latest; i++)
           if (!bitmap_contains (b, i, cnt, !value))
           {
@@ -326,14 +327,65 @@ bitmap_scan (const struct bitmap *b, size_t start, size_t cnt, bool value)
             return i;
           }
       }
-      else if(pallocator == 2)    /* Best fit */
+      else if(pallocator == 2)
       {
+        i = start;
+        size_t idx = 99999999; // 메모리 전체를 검색하여 필요한 크기보다 큰 공간 중에서 가장 적은 공간의 위치를 의미한다.
+        size_t size = 0; // 메모리 전체를 검색하여 필요한 크기보다 큰 공간 중에서 가장 적은 공간의 크기를 의미한다.
+        size_t temp_i = 0; // 가장 적은 공간일 것이라 생각되는 공간의 위치를 의미한다.
+        size_t temp_size = 0; // 가장 적은 공간일 것이라 생각되는 공간의 크기를 의미한다.
 
-      }
-      else                       /* Buddy system */
-      {
+        while(true) // 메모리 전체를 검색하는 반복문이다.
+        {
+          if(i >= last)
+          {
+            if(idx == 99999999)
+            { // 찾고자 하는 공간을 찾을 수 없을 경우에 대한 예외 처리이다.
+              printf("Hello!\n");
+              return BITMAP_ERROR;
+            }
 
+            printf("idx: %d, size: %d\n", idx, size);
+            return idx;
+          }
 
+          if(bitmap_test (b, i) == false)
+          {
+            temp_i = i;
+
+            while(true)
+            { // 해당 반복문을 통해 Not Free 위치를 찾는다.
+              i++;
+
+              if(i == last)
+                break;
+
+              if(bitmap_test (b, i) == true)
+                break;
+            }
+
+            // 해당 함수를 통해 temp_i를 시작으로 Free 공간의 크기를 계산한다.
+            temp_size = bitmap_count (b, temp_i, i-1-temp_i, false);
+
+            if(cnt <= temp_size)
+            {
+              if(size == 0)
+              {
+                idx = temp_i;
+                size = temp_size;
+              }
+              else if((size - cnt) > (temp_size - cnt))
+              {
+                idx = temp_i;
+                size = temp_size;
+              }
+            }
+          }
+          else
+          {
+            i++;
+          }
+        }
       }
     }
 
