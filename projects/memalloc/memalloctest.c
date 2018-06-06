@@ -12,7 +12,7 @@ void run_memalloc_test(char **argv UNUSED)
 	size_t i;
 	char* dynamicmem[11];
 
-	for (i=0; i<10; i++) {
+	for (i=0; i<6; i++) {
 		dynamicmem[i] = (char *) malloc (145000);
 		memset (dynamicmem[i], 0x00, 145000);
 	}
@@ -24,7 +24,18 @@ void run_memalloc_test(char **argv UNUSED)
 
 	thread_sleep (100);
 
-	for (i=0; i<11; i++) {
+	for (i=0; i<5; i++) {
+		free(dynamicmem[i]);
+		printf ("dump page status : \n");
+		palloc_get_status (0);
+	}
+
+	for (i=6; i<10; i++) {
+		dynamicmem[i] = (char *) malloc (145000);
+		memset (dynamicmem[i], 0x00, 145000);
+	}
+
+	for (i=5; i<11; i++) {
 		free(dynamicmem[i]);
 		printf ("dump page status : \n");
 		palloc_get_status (0);
