@@ -302,16 +302,16 @@ bitmap_scan (const struct bitmap *b, size_t start, size_t cnt, bool value)
   static size_t latest = 0;
 
   if (cnt <= b->bit_cnt)
-    {
+  {
       size_t last = b->bit_cnt - cnt;
       size_t i;
-      if(pallocator == 0)
+      if(pallocator == 0)          /* First fit */
       {
         for (i = start; i <= last; i++)
           if (!bitmap_contains (b, i, cnt, !value))
             return i;
       }
-      else if(pallocator == 1)
+      else if(pallocator == 1)    /* Next fit */
       {
         for (i = latest; i <= last; i++)
           if (!bitmap_contains (b, i, cnt, !value))
@@ -319,7 +319,6 @@ bitmap_scan (const struct bitmap *b, size_t start, size_t cnt, bool value)
             latest = i;
             return i;
           }
-
         for (i = start; i <= latest; i++)
           if (!bitmap_contains (b, i, cnt, !value))
           {
@@ -327,7 +326,17 @@ bitmap_scan (const struct bitmap *b, size_t start, size_t cnt, bool value)
             return i;
           }
       }
+      else if(pallocator == 2)    /* Best fit */
+      {
+
+      }
+      else                       /* Buddy system */
+      {
+
+
+      }
     }
+
   return BITMAP_ERROR;
 }
 
