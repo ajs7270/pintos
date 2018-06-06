@@ -4,7 +4,7 @@
 #include <round.h>
 #include <stdio.h>
 #include "threads/malloc.h"
-#include "threads/palloc.h"
+#include "threads/palloc.h" // pallocator를 사용하기 위해 추가하였다.
 #ifdef FILESYS
 #include "filesys/file.h"
 #endif
@@ -299,35 +299,35 @@ bitmap_scan (const struct bitmap *b, size_t start, size_t cnt, bool value)
   ASSERT (b != NULL);
   ASSERT (start <= b->bit_cnt);
 
-  static size_t latest = 0;
+  static size_t latest = 0; // 직전에 할당한 위치에 대한 정보를 담고 있는 변수이다.
 
   if (cnt <= b->bit_cnt)
     {
       size_t last = b->bit_cnt - cnt;
       size_t i;
-      if(pallocator == 0)
+      if(pallocator == 0) // First Fit
       {
         for (i = start; i <= last; i++)
           if (!bitmap_contains (b, i, cnt, !value))
             return i;
       }
-      else if(pallocator == 1)
+      else if(pallocator == 1) // Next Fit
       {
-        for (i = latest; i <= last; i++)
+        for (i = latest; i <= last; i++) // 직전에 할당한 위치에서부터 검색하는 반복문이다.
           if (!bitmap_contains (b, i, cnt, !value))
           {
             latest = i;
             return i;
           }
 
-        for (i = start; i <= latest; i++)
+        for (i = start; i <= latest; i++) // 메모리의 시작 지점부터 직전에 할당한 위치까지 검색하는 반복문이다.
           if (!bitmap_contains (b, i, cnt, !value))
           {
             latest = i;
             return i;
           }
       }
-      else if(pallocator == 2)
+      else if(pallocator == 2) // Best Fit
       {
         i = start;
         size_t idx = 99999999; // 메모리 전체를 검색하여 필요한 크기보다 큰 공간 중에서 가장 적은 공간의 위치를 의미한다.
@@ -386,6 +386,10 @@ bitmap_scan (const struct bitmap *b, size_t start, size_t cnt, bool value)
             i++;
           }
         }
+      }
+      else if(pallocator == 3) // Buddy System
+      {
+
       }
     }
 
