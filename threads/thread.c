@@ -22,7 +22,7 @@
 
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
-static struct list ready_list;
+static struct list feedback_queue[5]; //큐를 5개로 늘림
 
 /* List of all processes.  Processes are added to this list
    when they are first scheduled and removed when they exit. */
@@ -55,7 +55,7 @@ static long long kernel_ticks;  /* # of timer ticks in kernel threads. */
 static long long user_ticks;    /* # of timer ticks in user programs. */
 
 /* Scheduling. */
-#define TIME_SLICE 4            /* # of timer ticks to give each thread. */
+#define MAX_TIME_SLICE 6            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
 
 static void kernel_thread (thread_func *, void *aux);
@@ -89,7 +89,8 @@ thread_init (void)
   ASSERT (intr_get_level () == INTR_OFF);
 
   lock_init (&tid_lock);
-  list_init (&ready_list);
+  for(int i=0; i<5; i++) //큐를 5개를 init
+    list_init (&feedback_queue[i]);
   list_init (&all_list);
   list_init (&sleep_list);
 
@@ -117,6 +118,22 @@ thread_start (void)
   sema_down (&idle_started);
 }
 
+void
+thread_add_age(struct thread *t, void *aux){
+  int current_priority = thread_get_priority();
+  if(t->priority < PRI_MAX){ // 만약 우선순위가 가장 높은 경우 age를 증가시키지 않음
+    if(t->priority < current_priority){ // 현재 진행중인 큐보다 우선순위가 낮은경우에만 age증가
+      if(t->age < 20){ // age가 20미만이면 증가
+        (t->age)++;
+      }else{ // age가 20이면 priority를 올리고 그에 해당하는 큐에 넣어줌
+          (t->priority)++;
+          list_push_back (&feedback_queue[t->priority], &t->elem);
+          t->age = 0;
+      }
+    }
+  }
+}
+
 /* Called by the timer interrupt handler at each timer tick.
    Thus, this function runs in an external interrupt context. */
 void
@@ -134,8 +151,12 @@ thread_tick (void)
   else
     kernel_ticks++;
 
+  /* 한 틱이 증가할때 마다 age를 ++한다. */
+  thread_foreach(&thread_add_age,NULL);
+
   /* Enforce preemption. */
-  if (++thread_ticks >= TIME_SLICE)
+  // priority에 따라서 tick 사용
+  if (++thread_ticks >= MAX_TIME_SLICE - thread_get_priority())
     intr_yield_on_return ();
 }
 
@@ -237,7 +258,8 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  //priority에 따라 push back
+  list_push_back (&feedback_queue[t->priority], &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -364,8 +386,14 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+  if (cur != idle_thread){
+    // 실행되고 나올 때 우선순위가 낮은 큐로 들어간다.
+    if(cur->priority > PRI_MIN)
+      list_push_back (&feedback_queue[--(cur->priority)], &cur->elem);
+    else
+      list_push_back (&feedback_queue[cur->priority], &cur->elem);
+  }
+
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -545,12 +573,16 @@ alloc_frame (struct thread *t, size_t size)
    will be in the run queue.)  If the run queue is empty, return
    idle_thread. */
 static struct thread *
-next_thread_to_run (void) 
+next_thread_to_run (void)
 {
-  if (list_empty (&ready_list))
-    return idle_thread;
-  else
-    return list_entry (list_pop_front (&ready_list), struct thread, elem);
+  // 우선순위 높은 것부터 차례대로 넣어줌
+  for(int i = PRI_MAX ;i >= PRI_MIN; i--){
+    if(list_empty(&feedback_queue[i]))
+      continue;
+    return list_entry(list_pop_front(&feedback_queue[i]),struct thread, elem);
+  }
+  // 아무것도 없을 땐 idle_thread 리턴
+  return idle_thread;
 }
 
 /* Completes a thread switch by activating the new thread's page
@@ -578,6 +610,7 @@ thread_schedule_tail (struct thread *prev)
 
   /* Mark us as running. */
   cur->status = THREAD_RUNNING;
+  cur->age = 0 // 실행이 됬으므로 age를 0으로 만들어준다.
 
   /* Start new time slice. */
   thread_ticks = 0;
