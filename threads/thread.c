@@ -127,6 +127,7 @@ thread_add_age(struct thread *t, void *aux){
         (t->age)++;
       }else{ // age가 20이면 priority를 올리고 그에 해당하는 큐에 넣어줌
           (t->priority)++;
+          list_remove(&t->elem);
           list_push_back (&feedback_queue[t->priority], &t->elem);
           t->age = 0;
       }
