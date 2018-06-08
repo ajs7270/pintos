@@ -121,16 +121,13 @@ thread_start (void)
 void
 thread_add_age(struct thread *t, void *aux){
   int current_priority = thread_get_priority();
-  if(t->priority < PRI_MAX){ // 만약 우선순위가 가장 높은 경우 age를 증가시키지 않음
-    if(t->priority < current_priority){ // 현재 진행중인 큐보다 우선순위가 낮은경우에만 age증가
-      if(t->age < 20){ // age가 20미만이면 증가
-        (t->age)++;
-      }else{ // age가 20이면 priority를 올리고 그에 해당하는 큐에 넣어줌
-          (t->priority)++;
-          list_remove(&t->elem);
-          list_push_back (&feedback_queue[t->priority], &t->elem);
-          t->age = 0;
-      }
+  if(t->priority < current_priority){ // 현재 진행중인 큐보다 우선순위가 낮은경우에만 age증가
+    if(t->age < 20){ // age가 20미만이면 증가
+      (t->age)++;
+    }else{ // age가 20이면 priority를 올리고 그에 해당하는 큐에 넣어줌
+        list_remove(&t->elem);
+        list_push_back (&feedback_queue[++(t->priority)], &t->elem);
+        t->age = 0;
     }
   }
 }
