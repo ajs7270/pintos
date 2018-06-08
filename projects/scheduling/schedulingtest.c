@@ -9,7 +9,7 @@
 
 #define MAX_THREAD_CNT 10
 
-struct thread_info 
+struct thread_info
 {
 	int id;
 	int64_t start_time;
@@ -17,7 +17,7 @@ struct thread_info
 	struct semaphore sema_join;
 };
 
-static void load_thread (void *__ti) 
+static void load_thread (void *__ti)
 {
 	struct thread_info *ti = (struct thread_info *) __ti;
 	int64_t sleep_time = 3 * TIMER_FREQ;
@@ -55,7 +55,7 @@ void run_scheduling_test(char **argv UNUSED)
 		sema_init(&ti->sema_join, 0);
 
 		snprintf(name, sizeof name, "load %d", i);
-		thread_create(name, PRI_DEFAULT, load_thread, ti);
+		thread_create(name, i%(PRI_MAX+1), load_thread, ti);
 	}
 
 	printf("Starting threads took %lld ticks.\n", timer_elapsed (start_time));
